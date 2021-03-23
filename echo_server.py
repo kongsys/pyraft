@@ -1,30 +1,61 @@
 import socket
 import sys
 
-server_address = ("localhost", 10000)
-print(f"starting up on {server_address[0]} port {server_address[1]}")
+data = {}
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.bind(server_address)
+def get(k):
+  return data[k]
 
-sock.listen(1)
+def set(k, v):
+  data[k] = v
 
-while True:
-  print("waiting for connection")
+def delete(k):
+  del data[k]
 
-  conn, addr = sock.accept()
+def run_server():
+  server_address = ("localhost", 10000)
+  print(f"starting up on {server_address[0]} port {server_address[1]}")
 
-  try:
-    print(f"connection from {addr}")
+  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  sock.bind(server_address)
 
-    while True:
-      data = conn.recv(16)
-      print(f"received {data}")
-      if data:
-        print(f"sending data back to the client")
-        conn.sendall(data)
-      else:
-        print(f"no more data from {addr}")
-        break
-  finally:
-    conn.close()
+  sock.listen(1)
+
+  while True:
+    print("waiting for connection")
+
+    conn, addr = sock.accept()
+
+    try:
+      print(f"connection from {addr}")
+
+      while True:
+        op = conn.recv(16)
+        str_op = op.decode("utf-8")
+        print(f"received {str_op} of type {type(str_op)}")
+        if op:
+          cmd, key, v = 0, 1, 2
+          operands = str_op.split(" ")
+          resp = "Sorry, I don't understand taht command,"
+
+          if operands[cmd] == "get":
+            resp = get(operands[key])
+          elif operands[cmd] == "set":
+            set(operands[key], operands[v])
+            resp = f"key {operands[key]} set to {operands[v]}"
+          elif operands[cmd] == "delete":
+            delete(operands[key])
+            resp = f"key {key} deleted"
+          elif operands[cmd] == "show":
+            resp = str(data)
+          else:
+            pass
+          conn.sendall(resp.encode("utf-8"))
+
+        else:
+          print(f"no more data from {addr}")
+          break
+    finally:
+      conn.close()
+
+run_server()
