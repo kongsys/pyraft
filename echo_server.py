@@ -12,11 +12,33 @@ def set(k, v):
 def delete(k):
   del data[k]
 
+def execute(op):
+  str_op = op.decode("utf-8")
+  print(f"received {str_op} of type {type(str_op)}")
+  cmd, key, v = 0, 1, 2
+  operands = str_op.split(" ")
+  resp = "Sorry, I don't understand taht command,"
+
+  if operands[cmd] == "get":
+    resp = get(operands[key])
+  elif operands[cmd] == "set":
+    set(operands[key], operands[v])
+    resp = f"key {operands[key]} set to {operands[v]}"
+  elif operands[cmd] == "delete":
+    delete(operands[key])
+    resp = f"key {key} deleted"
+  elif operands[cmd] == "show":
+    resp = str(data)
+  else:
+    pass
+  return resp
+
 def run_server():
   server_address = ("localhost", 10000)
   print(f"starting up on {server_address[0]} port {server_address[1]}")
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   sock.bind(server_address)
 
   sock.listen(1)
@@ -31,30 +53,15 @@ def run_server():
 
       while True:
         op = conn.recv(16)
-        str_op = op.decode("utf-8")
-        print(f"received {str_op} of type {type(str_op)}")
         if op:
-          cmd, key, v = 0, 1, 2
-          operands = str_op.split(" ")
-          resp = "Sorry, I don't understand taht command,"
-
-          if operands[cmd] == "get":
-            resp = get(operands[key])
-          elif operands[cmd] == "set":
-            set(operands[key], operands[v])
-            resp = f"key {operands[key]} set to {operands[v]}"
-          elif operands[cmd] == "delete":
-            delete(operands[key])
-            resp = f"key {key} deleted"
-          elif operands[cmd] == "show":
-            resp = str(data)
-          else:
-            pass
+          resp = execute(op)
           conn.sendall(resp.encode("utf-8"))
 
         else:
           print(f"no more data from {addr}")
           break
+    except:
+      pass
     finally:
       conn.close()
 
