@@ -1,39 +1,15 @@
 import socket
-import sys
+import threading
+from store import KVStore
 
-data = {}
-
-def get(k):
-  return data[k]
-
-def set(k, v):
-  data[k] = v
-
-def delete(k):
-  del data[k]
-
-def execute(op):
-  str_op = op.decode("utf-8")
-  print(f"received {str_op} of type {type(str_op)}")
-  cmd, key, v = 0, 1, 2
-  operands = str_op.split(" ")
-  resp = "Sorry, I don't understand taht command,"
-
-  if operands[cmd] == "get":
-    resp = get(operands[key])
-  elif operands[cmd] == "set":
-    set(operands[key], operands[v])
-    resp = f"key {operands[key]} set to {operands[v]}"
-  elif operands[cmd] == "delete":
-    delete(operands[key])
-    resp = f"key {key} deleted"
-  elif operands[cmd] == "show":
-    resp = str(data)
-  else:
-    pass
-  return resp
+def upup(s):
+  with open("cmd.txt") as f:
+    for l in f:
+      s.execute(l.strip())
 
 def run_server():
+  kvs = KVStore()
+  upup(kvs)
   server_address = ("localhost", 10000)
   print(f"starting up on {server_address[0]} port {server_address[1]}")
 
@@ -44,25 +20,30 @@ def run_server():
   sock.listen(1)
 
   while True:
-    print("waiting for connection")
-
     conn, addr = sock.accept()
 
-    try:
-      print(f"connection from {addr}")
+    print(f"connection from {addr}")
+    threading.Thread(target=handle_conn, args=(conn, kvs)).start()
 
-      while True:
-        op = conn.recv(16)
-        if op:
-          resp = execute(op)
-          conn.sendall(resp.encode("utf-8"))
+def handle_conn(conn, kvs):
+  try:
 
-        else:
-          print(f"no more data from {addr}")
-          break
-    except:
-      pass
-    finally:
-      conn.close()
+    while True:
+      op = conn.recv(1024)
+      if op:
+        de_op = op.decode("utf-8")
+        print(f"received {de_op}")
+        with open("cmd.txt", "a") as f:
+          f.write(de_op)
+          f.write("\n")
+        resp = kvs.execute(de_op)
+        print(f"resp is {resp}")
+        conn.sendall(resp.encode("utf-8"))
+
+      else:
+        print(f"no more data")
+        break
+  finally:
+    conn.close()
 
 run_server()
