@@ -1,5 +1,8 @@
+import threading
+
 class KVStore:
   def __init__(self):
+    self.lock = threading.Lock()
     self.data = {}
 
   def get(self, k):
@@ -17,18 +20,19 @@ class KVStore:
 
     resp = "Sorry, I don't understand taht command,"
 
-    if operands[cmd] == "get":
-      resp = self.get(operands[key])
-    elif operands[cmd] == "set":
-      v = " ".join(operands[2:])
-      self.set(operands[key], v)
-      resp = f"key {operands[key]} set to {v}"
-    elif operands[cmd] == "delete":
-      self.delete(operands[key])
-      resp = f"key {key} deleted"
-    elif operands[cmd] == "show":
-      resp = str(self.data)
-    else:
-      pass
-    return resp
+    with self.lock:
+      if operands[cmd] == "get":
+        resp = self.get(operands[key])
+      elif operands[cmd] == "set":
+        v = " ".join(operands[2:])
+        self.set(operands[key], v)
+        resp = f"key {operands[key]} set to {v}"
+      elif operands[cmd] == "delete":
+        self.delete(operands[key])
+        resp = f"key {key} deleted"
+      elif operands[cmd] == "show":
+        resp = str(self.data)
+      else:
+        pass
+      return resp
 
