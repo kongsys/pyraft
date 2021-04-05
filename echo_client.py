@@ -1,4 +1,5 @@
 import socket
+from msg import *
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -10,9 +11,9 @@ while True:
   try:
     msg = input("Type your message:\n")
     print(f"sending {msg}")
-    sock.sendall(msg.encode('utf-8'))
+    send_msg(sock, msg.encode('utf-8'))
 
-    data = sock.recv(1024)
+    data = recv_msg(sock)
     print(f"received {data}")
 
   except:

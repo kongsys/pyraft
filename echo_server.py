@@ -1,6 +1,7 @@
 import socket
 import threading
 from store import KVStore
+from msg import *
 
 def upup(s):
   with open("cmd.txt") as f:
@@ -29,7 +30,7 @@ def handle_conn(conn, kvs):
   try:
 
     while True:
-      op = conn.recv(1024)
+      op = recv_msg(conn)
       if op:
         de_op = op.decode("utf-8")
         print(f"received {de_op}")
@@ -38,7 +39,7 @@ def handle_conn(conn, kvs):
           f.write("\n")
         resp = kvs.execute(de_op)
         print(f"resp is {resp}")
-        conn.sendall(resp.encode("utf-8"))
+        send_msg(conn, resp.encode("utf-8"))
 
       else:
         print(f"no more data")
