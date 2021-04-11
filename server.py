@@ -9,14 +9,17 @@ class Server:
     self.port = port
     self.name = name
     self.kvs = KVStore()
-    self.catch_up(self.kvs)
+    self.catch_up()
 
   def start(self):
     server_addr = ('localhost', self.port)
+    with open("server_registry.txt", "a") as f:
+      f.write(f"{self.name} localhost {self.port}\n")
+
     print(f"starting up on {server_addr[0]} port {server_addr[1]}")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(server_address)
+    sock.bind(server_addr)
 
     sock.listen(1)
 
