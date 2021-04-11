@@ -3,6 +3,7 @@ import threading
 from store import KVStore
 from msg import *
 import config
+import ast
 
 class Server:
   def __init__(self, name, port=10000):
@@ -41,7 +42,23 @@ class Server:
         if op:
           de_op = op.decode("utf-8")
           print(f"received {de_op}")
-          resp = obj.kvs.execute(de_op)
+          if de_op == "log_length?":
+            resp = "log_length %d" % (len(self.kvs.log))
+          elif de_op.split()[0] == "log_length":
+            catch_up_start_idx = int(de_op.split()[1])
+            if (self.kvs.log) > catch_up_start_idx:
+              resp = "catch_ip_logs %s" % (str(self.kvs.log[catch_ip_start_idx:]))
+            else:
+              resp = "Your info is as good as mine!"
+          elif de_op.split()[0] == "catch_up_logs":
+            logs_to_append = ast.literal_eval(de_op.split("catch_up_logs ")[1])
+            [self.kvs.execute(log) for log in logs_to_append]
+
+            resp = "Caugth up. Thanks!"
+          elif de_op == "show_log":
+            resp = str(self.kvs.log)
+          else:
+            resp = kvs.execute(de_op)
           print(f"resp is {resp}")
           send_msg(conn, resp.encode("utf-8"))
   
