@@ -9,7 +9,10 @@ class Server:
     self.port = port
     self.name = name
     self.kvs = KVStore()
-    self.catch_up()
+
+  def dest_addr(self):
+    other_servers = {k: v for (k, v) in config.server_nodes().items() if k != self.name}
+    return list(other_servers.values())
 
   def start(self):
     server_addr = ('localhost', self.port)
@@ -17,6 +20,7 @@ class Server:
       f.write(f"{self.name} localhost {self.port}\n")
 
     print(f"starting up on {server_addr[0]} port {server_addr[1]}")
+    print(self.dest_addr())
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(server_addr)
@@ -37,9 +41,6 @@ class Server:
         if op:
           de_op = op.decode("utf-8")
           print(f"received {de_op}")
-          with open("cmd.txt", "a") as f:
-            f.write(de_op)
-            f.write("\n")
           resp = obj.kvs.execute(de_op)
           print(f"resp is {resp}")
           send_msg(conn, resp.encode("utf-8"))
@@ -49,8 +50,3 @@ class Server:
           break
     finally:
       conn.close()
-
-  def catch_up(self):
-    with open("cmd.txt") as f:
-      for l in f:
-        self.kvs.execute(l.strip())

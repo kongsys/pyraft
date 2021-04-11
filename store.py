@@ -4,6 +4,7 @@ class KVStore:
   def __init__(self):
     self.lock = threading.Lock()
     self.data = {}
+    self.log = []
 
   def get(self, k):
     return self.data.get(k, "nil")
@@ -15,6 +16,7 @@ class KVStore:
     del self.data[k]
 
   def execute(self, op):
+    self.log.append(op)
     cmd, key = 0, 1
     operands = op.split(" ")
 
